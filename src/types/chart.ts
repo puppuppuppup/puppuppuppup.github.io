@@ -6,5 +6,11 @@ export type TChartData = {
 export type TChartDataZScored = {
     x: string;
     y: number;
-    aboveZScore: number | undefined;
+    aboveZScore: number | null;
+    zScore: number;
+};
+
+export type TGradientPercent = {
+    value: number;
+    isAboveZScore: boolean;
 };

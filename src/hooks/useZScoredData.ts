@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react';
+import { CHART_DATA } from '../data/chart';
 import { TChartData, TChartDataZScored } from '../types/chart';
 import { MathCounter } from '../utils/math-counter';
 
 const TARGET_Z_SCORE = 1;
 
-export const useZScoredData = (data: TChartData[]): TChartDataZScored[] => {
+export const useZScoredData = (data: TChartData[] = CHART_DATA) => {
     const [zScoredData, setZScoredData] = useState<TChartDataZScored[]>([]);
+    const [avg, setAvg] = useState(0);
+    const [standartDeviation, setStandartDeviation] = useState(0);
 
     const getMaths = (data: number[]) => {
         const avg = MathCounter.getAvg(data);
-        const dispersion = MathCounter.getDispersion(data, avg);
+        const standartDeviation = MathCounter.getStandartDeviation(data, avg);
 
         return {
             avg,
-            dispersion,
+            standartDeviation,
         };
     };
 
@@ -24,10 +27,10 @@ export const useZScoredData = (data: TChartData[]): TChartDataZScored[] => {
             values.push(dataPart.y);
         });
 
-        const uvMaths = getMaths(values);
+        const maths = getMaths(values);
 
         return {
-            maths: { ...uvMaths, data: values },
+            maths: { ...maths, data: values },
         };
     };
 
@@ -35,23 +38,33 @@ export const useZScoredData = (data: TChartData[]): TChartDataZScored[] => {
         const zScoredData: TChartDataZScored[] = [];
         const { maths } = getDataMaths();
 
+        setAvg(maths.avg);
+        setStandartDeviation(maths.standartDeviation);
+
         data.forEach(dataPart => {
-            const valueZScore = MathCounter.getZScore(
+            const zScore = MathCounter.getZScore(
                 dataPart.y,
                 maths.data,
                 maths.avg,
-                maths.dispersion,
+                maths.standartDeviation,
             );
 
             zScoredData.push({
                 x: dataPart.x,
                 y: dataPart.y,
-                aboveZScore: valueZScore > TARGET_Z_SCORE ? dataPart.y : undefined,
+                zScore,
+                aboveZScore: zScore > TARGET_Z_SCORE ? dataPart.y : null,
             });
         });
 
         setZScoredData(zScoredData);
     }, [data]);
 
-    return zScoredData;
+    return {
+        zScoredData,
+        maths: {
+            avg,
+            standartDeviation,
+        },
+    };
 };
